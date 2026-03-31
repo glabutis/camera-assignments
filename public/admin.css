@@ -1,0 +1,270 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg:           #0d0d0e;
+  --surface:      #141416;
+  --surface-up:   #1c1c1f;
+  --border:       rgba(255, 255, 255, 0.07);
+  --text:         #e8e8ea;
+  --text-dim:     #66666e;
+  --text-mid:     #a0a0a8;
+  --accent:       #d4a85a;
+  --accent-faint: rgba(212, 168, 90, 0.1);
+  --danger:       #c0504a;
+  --danger-faint: rgba(192, 80, 74, 0.1);
+  --radius:       8px;
+  --font:         'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+html, body {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* ─── Header ─────────────────────────────────────────── */
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.view-link {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-mid);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+}
+
+.view-link:hover {
+  color: var(--text);
+}
+
+/* ─── Table ──────────────────────────────────────────── */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: left;
+  padding: 0 0.75rem 0.75rem;
+}
+
+thead th.col-lead {
+  text-align: center;
+}
+
+thead th.col-delete {
+  width: 2.5rem;
+}
+
+tbody tr {
+  border-top: 1px solid var(--border);
+}
+
+tbody tr.saving td {
+  opacity: 0.5;
+}
+
+tbody td {
+  padding: 0.5rem 0.75rem;
+  vertical-align: middle;
+}
+
+/* ─── Inputs ─────────────────────────────────────────── */
+
+input[type="text"] {
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  padding: 0.4rem 0.5rem;
+  outline: none;
+  transition: border-color 150ms, background 150ms;
+}
+
+input[type="text"]:hover {
+  border-color: var(--border);
+}
+
+input[type="text"]:focus {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: var(--surface-up);
+}
+
+input[type="text"].error {
+  border-color: var(--danger);
+}
+
+/* ─── Lead radio ─────────────────────────────────────── */
+
+.col-lead {
+  text-align: center;
+}
+
+input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--text-dim);
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 150ms;
+}
+
+input[type="radio"]:checked {
+  border-color: var(--accent);
+}
+
+input[type="radio"]:checked::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* ─── Delete button ──────────────────────────────────── */
+
+button.delete {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+  transition: color 150ms, background 150ms;
+}
+
+button.delete:hover {
+  color: var(--danger);
+  background: var(--danger-faint);
+}
+
+/* ─── Add form ───────────────────────────────────────── */
+
+.add-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.add-form input[type="text"] {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.add-form input[type="text"]:focus {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: var(--surface-up);
+}
+
+.add-form label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+button.add {
+  background: var(--accent-faint);
+  border: 1px solid rgba(212, 168, 90, 0.2);
+  border-radius: var(--radius);
+  color: var(--accent);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.45rem 1rem;
+  white-space: nowrap;
+  transition: background 150ms, border-color 150ms;
+}
+
+button.add:hover {
+  background: rgba(212, 168, 90, 0.15);
+  border-color: rgba(212, 168, 90, 0.35);
+}
+
+button.add:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ─── Toast ──────────────────────────────────────────── */
+
+#toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: var(--surface-up);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-mid);
+  font-size: 0.75rem;
+  padding: 0.5rem 0.9rem;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 200ms, transform 200ms;
+  pointer-events: none;
+}
+
+#toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Empty state ────────────────────────────────────── */
+
+.empty {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  padding: 1.5rem 0.75rem;
+}

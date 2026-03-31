@@ -1,58 +1,28 @@
 # camera-assignments
 
-A small web app for displaying production role assignments on a TV screen during church services. It pulls data from a Google Sheet and pushes live updates to the browser over WebSocket — no page refresh needed when assignments change.
-
----
-
-## Google Sheets setup
-
-The app reads from a Google Sheet using a service account. You'll need to do this once.
-
-**1. Create a Google Cloud project**
-
-Go to [console.cloud.google.com](https://console.cloud.google.com), create a new project, then enable the **Google Sheets API** under APIs & Services → Library.
-
-**2. Create a service account**
-
-Go to APIs & Services → Credentials → Create Credentials → Service Account. Give it a name, then open it, go to the Keys tab, and create a new JSON key. Save the downloaded file as `service-account.json` in the project root.
-
-**3. Share your sheet**
-
-Open the downloaded JSON and find the `client_email` field. Share your Google Sheet with that email address (Viewer access is enough).
-
-**4. Sheet format**
-
-Row 1 is treated as a header and skipped. Data starts at row 2:
-
-| A — Role  | B — Name   | C — Lead |
-|-----------|------------|----------|
-| Director  | Sarah M.   | TRUE     |
-| Camera 1  | Tom H.     | FALSE    |
-| Audio     | Jake R.    | FALSE    |
-
-Set `C` to `TRUE` for whoever is in charge that service. Only one lead is expected.
-
-**5. Get your Sheet ID**
-
-Copy the ID from the sheet URL:
-```
-https://docs.google.com/spreadsheets/d/SHEET_ID_IS_HERE/edit
-```
+A small web app for displaying production role assignments on a TV screen during church services. Role data is managed through a built-in admin page at `/admin` and persisted in PostgreSQL. The display at `/` updates live over WebSocket whenever assignments change.
 
 ---
 
 ## Running locally
 
-Requires Node.js 18+.
+Requires Docker and Docker Compose.
 
 ```bash
 cp .env.example .env
-# edit .env and set SHEET_ID
+docker compose up -d
+```
+
+Open `http://localhost:3000/admin` to add assignments. The display is at `http://localhost:3000`.
+
+To build and run from source without Docker, you'll need Node.js 18+ and a running PostgreSQL instance:
+
+```bash
+cp .env.example .env
+# edit .env and set DATABASE_URL to your local Postgres connection string
 npm install
 npm start
 ```
-
-Open `http://localhost:3000`.
 
 ---
 
@@ -63,48 +33,48 @@ Open `http://localhost:3000`.
 ```bash
 docker run -d \
   -p 3000:3000 \
-  -e SHEET_ID=your-sheet-id \
-  -e SHEET_RANGE="Sheet1!A2:C" \
-  -e POLL_INTERVAL_MS=30000 \
-  -e GOOGLE_SERVICE_ACCOUNT_KEY_PATH=/secrets/service-account.json \
-  -v /absolute/path/to/service-account.json:/secrets/service-account.json:ro \
+  -e DATABASE_URL=postgresql://camapp:changeme@your-postgres-host:5432/camapp \
   ghcr.io/glabutis/camera-assignments:latest
 ```
 
-**Docker Compose:**
-
-Edit `docker-compose.yml` and set your `SHEET_ID`, then:
+**Docker Compose** (includes a Postgres container):
 
 ```bash
 docker compose up -d
 ```
 
-The compose file builds from source by default. To use the prebuilt image from GHCR instead, follow the comment at the top of `docker-compose.yml`.
+Edit `docker-compose.yml` to change the default database credentials before running in anything beyond a local dev environment.
 
 ---
 
 ## Kubernetes
 
-The `k8s/` directory contains a Deployment, Service, ConfigMap, and a secret template.
+The `k8s/` directory contains manifests for the app, a Postgres StatefulSet, and supporting resources.
 
-**1. Update the ConfigMap**
-
-Edit `k8s/configmap.yaml` and set `SHEET_ID` to your actual sheet ID.
-
-**3. Create the secret**
+**1. Create the Postgres credentials secret**
 
 ```bash
-kubectl create secret generic sheets-sa-key \
-  --from-file=service-account.json=./service-account.json
+kubectl create secret generic postgres-credentials \
+  --from-literal=POSTGRES_USER=camapp \
+  --from-literal=POSTGRES_PASSWORD=yourpassword
 ```
 
-**4. Apply**
+**2. Create the app database URL secret**
+
+The connection string here must match the credentials above and point to the `postgres` service:
+
+```bash
+kubectl create secret generic camera-db-secret \
+  --from-literal=DATABASE_URL=postgresql://camapp:yourpassword@postgres:5432/camapp
+```
+
+**3. Apply**
 
 ```bash
 kubectl apply -f k8s/
 ```
 
-The Service is `ClusterIP` by default. To expose it directly, change `type: ClusterIP` to `type: LoadBalancer` in `k8s/service.yaml`, or set up an ingress.
+This creates the Postgres StatefulSet (with a 10Gi PVC), its ClusterIP service, the app Deployment, and the app Service. The app Service is `ClusterIP` by default — change it to `LoadBalancer` in `k8s/service.yaml`, or set up an ingress, to expose it externally.
 
 ---
 
@@ -113,10 +83,7 @@ The Service is `ClusterIP` by default. To expose it directly, change `type: Clus
 | Variable | Default | Description |
 |---|---|---|
 | `PORT` | `3000` | Port the server listens on |
-| `SHEET_ID` | — | Google Sheet ID (required) |
-| `SHEET_RANGE` | `Sheet1!A2:C` | Range to read; update if your tab has a different name |
-| `POLL_INTERVAL_MS` | `30000` | How often to check the sheet for changes, in milliseconds |
-| `GOOGLE_SERVICE_ACCOUNT_KEY_PATH` | `./service-account.json` | Path to the service account JSON key file |
+| `DATABASE_URL` | — | PostgreSQL connection string (required) |
 
 ---
 

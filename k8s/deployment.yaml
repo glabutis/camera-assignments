@@ -14,24 +14,45 @@ spec:
       labels:
         app: camera-assignments
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
         - name: camera-assignments
-          # Image is pushed to ghcr.io by GitHub Actions on merge to main
           image: ghcr.io/glabutis/camera-assignments:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
           envFrom:
             - configMapRef:
                 name: camera-assignments-config
           env:
-            - name: GOOGLE_SERVICE_ACCOUNT_KEY_PATH
-              value: /app/secrets/service-account.json
-          volumeMounts:
-            - name: sa-key
-              mountPath: /app/secrets
-              readOnly: true
-      volumes:
-        - name: sa-key
-          secret:
-            secretName: sheets-sa-key
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: camera-db-secret
+                  key: DATABASE_URL

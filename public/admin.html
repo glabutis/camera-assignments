@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Production Roles — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <header>
+    <h1>Production Roles</h1>
+    <a href="/" class="view-link">View display</a>
+  </header>
+
+  <main>
+    <table>
+      <thead>
+        <tr>
+          <th>Role</th>
+          <th>Name</th>
+          <th class="col-lead">Lead</th>
+          <th class="col-delete"></th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+
+    <div class="add-form">
+      <input type="text" id="add-role" placeholder="Role" autocomplete="off" />
+      <input type="text" id="add-name" placeholder="Name" autocomplete="off" />
+      <label>
+        <input type="checkbox" id="add-lead" />
+        Lead
+      </label>
+      <button class="add" id="add-btn">Add</button>
+    </div>
+  </main>
+
+  <div id="toast"></div>
+
+  <script>
+    const tbody = document.getElementById('rows');
+    const addRole = document.getElementById('add-role');
+    const addName = document.getElementById('add-name');
+    const addLead = document.getElementById('add-lead');
+    const addBtn  = document.getElementById('add-btn');
+    const toast   = document.getElementById('toast');
+
+    let toastTimer;
+
+    function showToast(msg) {
+      clearTimeout(toastTimer);
+      toast.textContent = msg;
+      toast.classList.add('show');
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function renderRows(assignments) {
+      if (assignments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty">No assignments yet. Add one below.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = assignments.map(a => `
+        <tr data-id="${a.id}">
+          <td><input type="text" class="field-role" value="${escHtml(a.role)}" /></td>
+          <td><input type="text" class="field-name" value="${escHtml(a.name)}" /></td>
+          <td class="col-lead">
+            <input type="radio" name="lead" value="${a.id}" ${a.isLead ? 'checked' : ''} />
+          </td>
+          <td><button class="delete" title="Remove">&#x2715;</button></td>
+        </tr>
+      `).join('');
+    }
+
+    async function load() {
+      const res = await fetch('/api/assignments');
+      renderRows(await res.json());
+    }
+
+    async function saveRow(tr) {
+      const id    = parseInt(tr.dataset.id, 10);
+      const role  = tr.querySelector('.field-role').value.trim();
+      const name  = tr.querySelector('.field-name').value.trim();
+      const isLead = tr.querySelector('input[type="radio"]').checked;
+
+      if (!role || !name) return;
+
+      tr.classList.add('saving');
+      try {
+        const res = await fetch(`/api/assignments/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role, name, isLead }),
+        });
+        if (res.ok) {
+          showToast('Saved');
+          if (isLead) await load(); // re-render to clear other lead radios
+        }
+      } finally {
+        tr.classList.remove('saving');
+      }
+    }
+
+    async function deleteRow(id) {
+      await fetch(`/api/assignments/${id}`, { method: 'DELETE' });
+      await load();
+      showToast('Removed');
+    }
+
+    tbody.addEventListener('blur', e => {
+      if (e.target.matches('.field-role, .field-name')) {
+        const tr = e.target.closest('tr');
+        if (tr) saveRow(tr);
+      }
+    }, true);
+
+    tbody.addEventListener('change', e => {
+      if (e.target.matches('input[type="radio"]')) {
+        const tr = e.target.closest('tr');
+        if (tr) saveRow(tr);
+      }
+    });
+
+    tbody.addEventListener('click', e => {
+      if (e.target.matches('button.delete')) {
+        const tr = e.target.closest('tr');
+        if (tr) deleteRow(parseInt(tr.dataset.id, 10));
+      }
+    });
+
+    tbody.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && e.target.matches('.field-role, .field-name')) {
+        e.target.blur();
+      }
+    });
+
+    addBtn.addEventListener('click', async () => {
+      const role = addRole.value.trim();
+      const name = addName.value.trim();
+
+      if (!role) { addRole.classList.add('error'); addRole.focus(); return; }
+      if (!name) { addName.classList.add('error'); addName.focus(); return; }
+
+      addBtn.disabled = true;
+      try {
+        const res = await fetch('/api/assignments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role, name, isLead: addLead.checked }),
+        });
+        if (res.ok) {
+          addRole.value = '';
+          addName.value = '';
+          addLead.checked = false;
+          await load();
+          showToast('Added');
+          addRole.focus();
+        }
+      } finally {
+        addBtn.disabled = false;
+      }
+    });
+
+    addRole.addEventListener('input', () => addRole.classList.remove('error'));
+    addName.addEventListener('input', () => addName.classList.remove('error'));
+
+    addName.addEventListener('keydown', e => {
+      if (e.key === 'Enter') addBtn.click();
+    });
+
+    load();
+  </script>
+</body>
+</html>
