@@ -11,48 +11,36 @@
 </head>
 <body>
   <header>
-    <h1>Production Roles</h1>
-    <span id="status" class="disconnected">Connecting...</span>
+    <h1>Weekend Production Roles</h1>
+    <span id="clock"></span>
   </header>
 
-  <section id="lead-section">
-    <div class="section-label">In Charge</div>
-    <div id="lead-card" class="card-lead">
-      <span class="role" id="lead-role"></span>
-      <span class="name" id="lead-name"></span>
-    </div>
-  </section>
-
   <section id="grid-section">
-    <div class="section-label">Team</div>
     <div id="assignments-grid"></div>
     <p id="empty">No assignments loaded yet.</p>
   </section>
 
   <script>
-    const statusEl = document.getElementById('status');
-    const leadSection = document.getElementById('lead-section');
-    const leadRole = document.getElementById('lead-role');
-    const leadName = document.getElementById('lead-name');
-    const grid = document.getElementById('assignments-grid');
-    const emptyEl = document.getElementById('empty');
+    const clockEl  = document.getElementById('clock');
+    const grid     = document.getElementById('assignments-grid');
+    const emptyEl  = document.getElementById('empty');
+
+    function updateClock() {
+      clockEl.textContent = new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
 
     function render(assignments) {
-      const lead = assignments.find(a => a.isLead);
-      const rest = assignments.filter(a => !a.isLead);
-
-      if (lead) {
-        leadRole.textContent = lead.role;
-        leadName.textContent = lead.name;
-        leadSection.classList.add('visible');
-      } else {
-        leadSection.classList.remove('visible');
-      }
-
-      grid.innerHTML = rest.map(a => `
+      grid.innerHTML = assignments.map(a => `
         <div class="card">
           <span class="role">${escHtml(a.role)}</span>
           <span class="name">${escHtml(a.name)}</span>
+          ${a.isLead ? '<span class="badge">Point Person</span>' : ''}
         </div>
       `).join('');
 
@@ -67,13 +55,11 @@
         .replace(/"/g, '&quot;');
     }
 
-    // Initial load via HTTP (handles page refresh case)
     fetch('/api/assignments')
       .then(r => r.json())
       .then(render)
       .catch(err => console.error('Initial fetch failed:', err));
 
-    // WebSocket for live updates
     let ws;
     let reconnectDelay = 1000;
 
@@ -82,8 +68,6 @@
       ws = new WebSocket(`${protocol}//${location.host}`);
 
       ws.addEventListener('open', () => {
-        statusEl.textContent = 'Live';
-        statusEl.className = 'connected';
         reconnectDelay = 1000;
       });
 
@@ -96,8 +80,6 @@
       });
 
       ws.addEventListener('close', () => {
-        statusEl.textContent = 'Reconnecting...';
-        statusEl.className = 'disconnected';
         setTimeout(connect, reconnectDelay);
         reconnectDelay = Math.min(reconnectDelay * 2, 30000);
       });
