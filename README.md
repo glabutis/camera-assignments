@@ -87,12 +87,6 @@ This creates the Postgres StatefulSet (with a 10Gi PVC), its ClusterIP service, 
 
 ---
 
-## CI/CD
-
-Pushing to `main` triggers a GitHub Actions workflow that builds the Docker image and pushes it to GitHub Container Registry as `ghcr.io/glabutis/camera-assignments:latest` and `:<commit-sha>`. No secrets beyond the default `GITHUB_TOKEN` are needed.
-
----
-
 ## License
 
 MIT
