@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: camera-assignments
+  labels:
+    app: camera-assignments
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: camera-assignments
+  template:
+    metadata:
+      labels:
+        app: camera-assignments
+    spec:
+      containers:
+        - name: camera-assignments
+          # Image is pushed to ghcr.io by GitHub Actions on merge to main
+          image: ghcr.io/glabutis/camera-assignments:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: camera-assignments-config
+          env:
+            - name: GOOGLE_SERVICE_ACCOUNT_KEY_PATH
+              value: /app/secrets/service-account.json
+          volumeMounts:
+            - name: sa-key
+              mountPath: /app/secrets
+              readOnly: true
+      volumes:
+        - name: sa-key
+          secret:
+            secretName: sheets-sa-key

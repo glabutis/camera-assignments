@@ -1,0 +1,223 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg:           #0d0d0e;
+  --surface:      #141416;
+  --surface-up:   #1c1c1f;
+  --border:       rgba(255, 255, 255, 0.07);
+  --border-lead:  rgba(212, 168, 90, 0.35);
+
+  --text:         #e8e8ea;
+  --text-dim:     #66666e;
+  --text-mid:     #a0a0a8;
+
+  --accent:       #d4a85a;
+  --accent-faint: rgba(212, 168, 90, 0.08);
+
+  --radius:       8px;
+  --font:         'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  min-height: 100vh;
+  padding: 2.75rem 3.5rem;
+  gap: 2.5rem;
+}
+
+/* ─── Header ─────────────────────────────────────────── */
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+#status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+#status::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  flex-shrink: 0;
+}
+
+#status.connected {
+  color: #6db87a;
+}
+
+#status.connected::before {
+  background: #6db87a;
+  box-shadow: 0 0 6px rgba(109, 184, 122, 0.5);
+}
+
+#status.disconnected::before {
+  background: #c05252;
+}
+
+/* ─── Lead Section ───────────────────────────────────── */
+
+#lead-section {
+  display: none;
+}
+
+#lead-section.visible {
+  display: block;
+}
+
+.section-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 1rem;
+}
+
+.card-lead {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border-lead);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 1.75rem 2.25rem;
+}
+
+.card-lead .role {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.card-lead .name {
+  font-size: 2.75rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--text);
+  line-height: 1;
+  display: block;
+}
+
+/* ─── Grid Section ───────────────────────────────────── */
+
+#grid-section {
+  align-self: start;
+}
+
+#assignments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.card {
+  background: var(--surface);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.card .role {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.card .name {
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+/* ─── Empty state ────────────────────────────────────── */
+
+#empty {
+  display: none;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  padding: 1rem 0;
+}
+
+#empty.visible {
+  display: block;
+}
+
+/* ─── Large screen scaling ───────────────────────────── */
+
+@media (min-width: 1920px) {
+  body {
+    padding: 4rem 6rem;
+    gap: 3.5rem;
+  }
+
+  .card-lead .name {
+    font-size: 3.5rem;
+  }
+
+  .card .name {
+    font-size: 2rem;
+  }
+
+  #assignments-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+}
+
+/* ─── Reduced motion ─────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  #status.connected::before {
+    box-shadow: none;
+  }
+}

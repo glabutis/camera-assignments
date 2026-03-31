@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: camera-assignments-config
+data:
+  PORT: "3000"
+  SHEET_ID: "your-google-sheet-id-here"
+  SHEET_RANGE: "Sheet1!A2:C"
+  POLL_INTERVAL_MS: "30000"

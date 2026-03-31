@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Production Roles</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Production Roles</h1>
+    <span id="status" class="disconnected">Connecting...</span>
+  </header>
+
+  <section id="lead-section">
+    <div class="section-label">In Charge</div>
+    <div id="lead-card" class="card-lead">
+      <span class="role" id="lead-role"></span>
+      <span class="name" id="lead-name"></span>
+    </div>
+  </section>
+
+  <section id="grid-section">
+    <div class="section-label">Team</div>
+    <div id="assignments-grid"></div>
+    <p id="empty">No assignments loaded yet.</p>
+  </section>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const leadSection = document.getElementById('lead-section');
+    const leadRole = document.getElementById('lead-role');
+    const leadName = document.getElementById('lead-name');
+    const grid = document.getElementById('assignments-grid');
+    const emptyEl = document.getElementById('empty');
+
+    function render(assignments) {
+      const lead = assignments.find(a => a.isLead);
+      const rest = assignments.filter(a => !a.isLead);
+
+      if (lead) {
+        leadRole.textContent = lead.role;
+        leadName.textContent = lead.name;
+        leadSection.classList.add('visible');
+      } else {
+        leadSection.classList.remove('visible');
+      }
+
+      grid.innerHTML = rest.map(a => `
+        <div class="card">
+          <span class="role">${escHtml(a.role)}</span>
+          <span class="name">${escHtml(a.name)}</span>
+        </div>
+      `).join('');
+
+      emptyEl.classList.toggle('visible', assignments.length === 0);
+    }
+
+    function escHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Initial load via HTTP (handles page refresh case)
+    fetch('/api/assignments')
+      .then(r => r.json())
+      .then(render)
+      .catch(err => console.error('Initial fetch failed:', err));
+
+    // WebSocket for live updates
+    let ws;
+    let reconnectDelay = 1000;
+
+    function connect() {
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${location.host}`);
+
+      ws.addEventListener('open', () => {
+        statusEl.textContent = 'Live';
+        statusEl.className = 'connected';
+        reconnectDelay = 1000;
+      });
+
+      ws.addEventListener('message', e => {
+        try {
+          render(JSON.parse(e.data));
+        } catch (err) {
+          console.error('Failed to parse message:', err);
+        }
+      });
+
+      ws.addEventListener('close', () => {
+        statusEl.textContent = 'Reconnecting...';
+        statusEl.className = 'disconnected';
+        setTimeout(connect, reconnectDelay);
+        reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+      });
+
+      ws.addEventListener('error', () => {
+        ws.close();
+      });
+    }
+
+    connect();
+  </script>
+</body>
+</html>
